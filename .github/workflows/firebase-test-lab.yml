@@ -1,0 +1,101 @@
+name: Firebase Test Lab
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  instrumentation-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: "platforms;android-37 build-tools;37.0.0"
+
+      - name: Build application and instrumentation APKs
+        run: ./gradlew --no-daemon :app:assembleDebug :app:assembleDebugAndroidTest
+
+      - name: Upload test APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-instrumentation-apks
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+          if-no-files-found: error
+
+      - name: Explain skipped cloud test
+        if: >-
+          vars.FIREBASE_PROJECT_ID == '' ||
+          vars.GCP_WORKLOAD_IDENTITY_PROVIDER == '' ||
+          vars.GCP_SERVICE_ACCOUNT == '' ||
+          vars.FIREBASE_RESULTS_BUCKET == '' ||
+          (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository)
+        run: |
+          echo "## Firebase Test Lab not submitted" >> "$GITHUB_STEP_SUMMARY"
+          echo "The APKs were built, but cloud submission was skipped." >> "$GITHUB_STEP_SUMMARY"
+          echo "Cloud tests run only for trusted repository events with all four repository variables configured:" >> "$GITHUB_STEP_SUMMARY"
+          echo "FIREBASE_PROJECT_ID, GCP_WORKLOAD_IDENTITY_PROVIDER, GCP_SERVICE_ACCOUNT, and FIREBASE_RESULTS_BUCKET." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Authenticate to Google Cloud
+        if: >-
+          vars.FIREBASE_PROJECT_ID != '' &&
+          vars.GCP_WORKLOAD_IDENTITY_PROVIDER != '' &&
+          vars.GCP_SERVICE_ACCOUNT != '' &&
+          vars.FIREBASE_RESULTS_BUCKET != '' &&
+          (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ vars.FIREBASE_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Google Cloud CLI
+        if: >-
+          vars.FIREBASE_PROJECT_ID != '' &&
+          vars.GCP_WORKLOAD_IDENTITY_PROVIDER != '' &&
+          vars.GCP_SERVICE_ACCOUNT != '' &&
+          vars.FIREBASE_RESULTS_BUCKET != '' &&
+          (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Run Firebase Test Lab instrumentation test
+        if: >-
+          vars.FIREBASE_PROJECT_ID != '' &&
+          vars.GCP_WORKLOAD_IDENTITY_PROVIDER != '' &&
+          vars.GCP_SERVICE_ACCOUNT != '' &&
+          vars.FIREBASE_RESULTS_BUCKET != '' &&
+          (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        run: |
+          gcloud firebase test android run \
+            --type instrumentation \
+            --app app/build/outputs/apk/debug/app-debug.apk \
+            --test app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
+            --timeout 10m \
+            --use-orchestrator \
+            --no-auto-google-login \
+            --record-video \
+            --results-history-name "reimagined-telegram-webview" \
+            --results-bucket "${{ vars.FIREBASE_RESULTS_BUCKET }}" \
+            --results-dir "github/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --client-details "githubRepository=${GITHUB_REPOSITORY},githubRun=${GITHUB_RUN_ID},githubSha=${GITHUB_SHA}"
