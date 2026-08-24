@@ -4,9 +4,9 @@ This repository contains a minimal Android application skeleton for preparing an
 
 ## Current scope
 
-The project includes a single Kotlin Android application module, a launcher activity, a unit-test target, and baseline Gradle configuration. It deliberately does **not** include HubSpot credentials, portal identifiers, chat configuration, a WebView implementation, network-permission changes, or telemetry.
+The project includes a single Kotlin Android application module, a launcher activity, a unit-test target, baseline Gradle configuration, and a restricted internal WebView component. The launcher opens only the verified `https://www.oghenekumejohn.online/` destination, and the component allows only the exact `www.oghenekumejohn.online` host. JavaScript, storage, file access, popups, JavaScript bridges, and cleartext traffic remain disabled by default.
 
-Those integrations should be added only after issue #1 has a reproducible symptom, a confirmed source requirement, and an approved implementation design.
+The project deliberately does **not** include HubSpot credentials, portal identifiers, chat configuration, JavaScript enablement, or telemetry. Those integrations should be added only after issue #1 has a reproducible symptom, a confirmed source requirement, and an approved implementation design.
 
 ## Requirements
 

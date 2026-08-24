@@ -1,6 +1,6 @@
 # HubSpot and WebView Integration Readiness
 
-The Android skeleton intentionally contains no HubSpot SDK or WebView implementation. Add one only after the product requirement and issue reproduction are confirmed.
+The Android skeleton now contains a restricted baseline `WebViewActivity`, but it has no configured destination and no HubSpot SDK. A product-specific URL, allowed-host list, JavaScript requirement, or HubSpot integration must be approved only after the product requirement and issue reproduction are confirmed.
 
 ## Required inputs
 
@@ -14,8 +14,9 @@ The Android skeleton intentionally contains no HubSpot SDK or WebView implementa
 ## Implementation boundaries
 
 - Keep HubSpot configuration and secrets outside source control.
+- Supply only HTTPS URLs and an explicit, exact allowed-host set to `WebViewActivity.newIntent()`.
 - Do not enable cleartext traffic or weaken certificate validation to work around a loading failure.
-- Keep WebView navigation, JavaScript, and bridge capabilities disabled by default unless a specific requirement and security review approve them.
+- Keep WebView navigation outside the approved-host set, JavaScript, storage, popups, file access, and JavaScript bridge capabilities disabled unless a specific requirement and security review approve them.
 - Add narrowly scoped release shrinker rules only when supported by release-build test evidence.
 
 ## Validation plan
