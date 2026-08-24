@@ -1,0 +1,39 @@
+name: Repository checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  repository-checks:
+    name: Repository bootstrap checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Validate repository baseline
+        run: |
+          test -f README.md
+          echo "Repository baseline check passed."
+
+      - name: Report test-suite readiness
+        run: |
+          if find . -type f \( -name '*Test*' -o -name '*Tests*' -o -name 'package.json' -o -name 'build.gradle' -o -name 'build.gradle.kts' \) -not -path './.git/*' | grep -q .; then
+            echo "Test or build configuration detected. Replace this bootstrap check with the project-specific test command."
+          else
+            echo "No application test suite or build configuration is currently committed."
+            echo "This workflow verifies repository readiness only; it does not substitute for application tests."
+          fi
