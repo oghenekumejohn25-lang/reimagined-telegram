@@ -1,0 +1,11 @@
+{
+  "name": "reimagined-telegram",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Native Android project configuration for EAS Build.",
+  "scripts": {
+    "android:assemble-debug": "./gradlew :app:assembleDebug",
+    "android:assemble-release": "./gradlew :app:assembleRelease",
+    "android:test": "./gradlew :app:testDebugUnitTest"
+  }
+}
