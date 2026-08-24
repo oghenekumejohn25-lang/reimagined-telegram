@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "Reimagined Telegram",
+    "slug": "reimagined-telegram",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "android": {
+      "package": "com.oghenekume.reimaginedtelegram"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "9ab3bc2c-5b86-4005-a8e6-5b7ccbe99206"
+      }
+    }
+  }
+}
